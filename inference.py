@@ -9,11 +9,13 @@ from openai import OpenAI
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:7860")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+API_KEY = OPENAI_API_KEY or HF_TOKEN
 
 # OpenAI client is required by the challenge specification.
-client = OpenAI(api_key=HF_TOKEN) if HF_TOKEN else None
+client = OpenAI(api_key=API_KEY) if API_KEY else None
 
 
 def _bool_text(value: bool) -> str:
@@ -38,7 +40,7 @@ def _model_action_suggestion(
     observation: Dict[str, Any],
     fallback_action: Dict[str, Any],
 ) -> Dict[str, Any]:
-    if not HF_TOKEN or client is None:
+    if not API_KEY or client is None:
         return fallback_action
 
     prompt_payload = {
