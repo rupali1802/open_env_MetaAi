@@ -1,0 +1,9 @@
+name: ai-data-privacy-impact-assessor
+version: "1.0.0"
+description: OpenEnv environment for AI-driven data privacy impact assessment and GDPR compliance training
+tags:
+  - openenv
+  - privacy
+  - gdpr
+  - ai-audit
+main: server/app:app
