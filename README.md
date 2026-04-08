@@ -1,3 +1,13 @@
+---
+title: AI Data Privacy Impact Assessor
+emoji: "🛡️"
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # AI Data Privacy Impact Assessor
 
 ## Project Overview
