@@ -145,6 +145,12 @@ uvicorn server.app:app --host 0.0.0.0 --port 7860
 copy .env.example .env
 ```
 
+Required variables in `.env`:
+- `ENV_BASE_URL` for the OpenEnv runtime (`/reset` and `/step`), default `http://127.0.0.1:7860`
+- `API_BASE_URL` for the injected LiteLLM proxy
+- `API_KEY` for the injected LiteLLM key
+- `MODEL_NAME` (optional, defaults to `gpt-4o-mini`)
+
 4. Run inference benchmark:
 ```bash
 python inference.py
@@ -178,9 +184,10 @@ Docker guarantees:
 1. Create a new Space with Docker SDK.
 2. Push this repository content to the Space.
 3. In Space variables, set:
-- `API_BASE_URL` (for inference, usually your service URL)
+- `ENV_BASE_URL` (your OpenEnv service URL, if not local default)
+- `API_BASE_URL` (LiteLLM proxy URL provided by the evaluator)
+- `API_KEY` (LiteLLM proxy API key provided by the evaluator)
 - `MODEL_NAME`
-- `HF_TOKEN`
 4. Ensure the service listens on port `7860`.
 5. Deploy and verify:
 - `GET /` returns `{"status":"ok"}`

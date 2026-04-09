@@ -5,17 +5,19 @@ import os
 from typing import Any, Dict, List, Tuple
 
 import requests
+from dotenv import load_dotenv
 from openai import OpenAI
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:7860")
+load_dotenv()
+
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:7860")
+API_BASE_URL = os.environ["API_BASE_URL"]
+API_KEY = os.environ["API_KEY"]
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
-API_KEY = OPENAI_API_KEY or HF_TOKEN
 
 # OpenAI client is required by the challenge specification.
-client = OpenAI(api_key=API_KEY) if API_KEY else None
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 
 def _bool_text(value: bool) -> str:
@@ -40,9 +42,6 @@ def _model_action_suggestion(
     observation: Dict[str, Any],
     fallback_action: Dict[str, Any],
 ) -> Dict[str, Any]:
-    if not API_KEY or client is None:
-        return fallback_action
-
     prompt_payload = {
         "task": task_name,
         "current_phase": observation.get("current_phase"),
@@ -53,21 +52,25 @@ def _model_action_suggestion(
     }
 
     try:
-        response = client.responses.create(
+        response = client.chat.completions.create(
             model=MODEL_NAME,
-            input=[
+            messages=[
                 {
                     "role": "system",
-                    "content": "You are a GDPR auditing planner. Output only valid JSON action objects.",
+                    "content": (
+                        "You are a GDPR auditing planner. "
+                        "Return only one valid JSON action object with no markdown."
+                    ),
                 },
                 {
                     "role": "user",
                     "content": json.dumps(prompt_payload),
                 },
             ],
-            max_output_tokens=120,
+            max_tokens=120,
+            temperature=0,
         )
-        text = (response.output_text or "").strip()
+        text = (response.choices[0].message.content or "").strip()
         parsed = _sanitize_action(json.loads(text))
         return parsed or fallback_action
     except Exception:
@@ -77,7 +80,7 @@ def _model_action_suggestion(
 def _post_json(path: str, payload: Dict[str, Any]) -> Tuple[Dict[str, Any], str | None]:
     try:
         response = requests.post(
-            f"{API_BASE_URL}{path}",
+            f"{ENV_BASE_URL}{path}",
             json=payload,
             timeout=30,
         )
@@ -154,7 +157,7 @@ def _task_plan(task_name: str) -> List[Dict[str, Any]]:
 
 
 def run_task(task_name: str) -> None:
-    print(f"[START] task={task_name} env={API_BASE_URL} model={MODEL_NAME}")
+    print(f"[START] task={task_name} env={ENV_BASE_URL} model={MODEL_NAME}")
 
     reset_response, reset_error = _post_json("/reset", {"task": task_name})
     observation = reset_response if isinstance(reset_response, dict) else {}
