@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import Iterable, Set
 
+STRICT_EPSILON = 0.001
+
 
 def _normalize(values: Iterable[str]) -> Set[str]:
     return {str(value).strip().lower() for value in values}
 
 
 def _clamp_01(score: float) -> float:
-    return max(0.0, min(1.0, score))
+    return max(STRICT_EPSILON, min(1.0 - STRICT_EPSILON, score))
 
 
 def easy_grader(identified_fields: Iterable[str], expected_fields: Iterable[str]) -> float:
@@ -16,7 +18,7 @@ def easy_grader(identified_fields: Iterable[str], expected_fields: Iterable[str]
     identified = _normalize(identified_fields)
     expected = _normalize(expected_fields)
     if not expected:
-        return 1.0
+        return 1.0 - STRICT_EPSILON
     return round(_clamp_01(len(identified & expected) / len(expected)), 3)
 
 
@@ -25,14 +27,14 @@ def medium_grader(flagged_violations: Iterable[str], expected_violations: Iterab
     flagged = _normalize(flagged_violations)
     expected = _normalize(expected_violations)
     if not expected:
-        return 1.0
+        return 1.0 - STRICT_EPSILON
 
     true_positives = len(flagged & expected)
     precision = true_positives / len(flagged) if flagged else 0.0
     recall = true_positives / len(expected)
 
     if precision + recall == 0.0:
-        return 0.0
+        return STRICT_EPSILON
 
     f1 = 2.0 * precision * recall / (precision + recall)
     return round(_clamp_01(f1), 3)

@@ -68,6 +68,10 @@ def _bool_text(value: bool) -> str:
     return "true" if value else "false"
 
 
+def _strict_open01(value: float, epsilon: float = 0.001) -> float:
+    return max(epsilon, min(1.0 - epsilon, value))
+
+
 def _format_reward_list(rewards: List[float]) -> str:
     return ",".join(f"{reward:.3f}" for reward in rewards)
 
@@ -250,6 +254,8 @@ def run_task(task_name: str) -> None:
         success = success and True
     else:
         success = False
+
+    score = _strict_open01(score)
 
     print(
         f"[END] success={_bool_text(success)} steps={len(rewards)} "
