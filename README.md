@@ -148,7 +148,7 @@ copy .env.example .env
 Required variables in `.env`:
 - `ENV_BASE_URL` for the OpenEnv runtime (`/reset` and `/step`), default `http://127.0.0.1:7860`
 - `API_BASE_URL` for the injected LiteLLM proxy
-- `API_KEY` for the injected LiteLLM key
+- `API_KEY` or `HF_TOKEN` for the injected LiteLLM/Hugging Face key
 - `MODEL_NAME` (optional, defaults to `gpt-4o-mini`)
 
 4. Run inference benchmark:
@@ -186,7 +186,7 @@ Docker guarantees:
 3. In Space variables, set:
 - `ENV_BASE_URL` (your OpenEnv service URL, if not local default)
 - `API_BASE_URL` (LiteLLM proxy URL provided by the evaluator)
-- `API_KEY` (LiteLLM proxy API key provided by the evaluator)
+- `API_KEY` or `HF_TOKEN` (LiteLLM proxy API key provided by the evaluator)
 - `MODEL_NAME`
 4. Ensure the service listens on port `7860`.
 5. Deploy and verify:

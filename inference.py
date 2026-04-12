@@ -3,21 +3,65 @@ from __future__ import annotations
 import json
 import os
 from typing import Any, Dict, List, Tuple
+from urllib.parse import urlparse, urlunparse
 
 import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv()
 
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:7860")
-API_BASE_URL = os.environ["API_BASE_URL"]
-API_KEY = os.environ["API_KEY"]
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+def _require_env(name: str) -> str:
+    value = os.getenv(name)
+    if value is None:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    normalized = value.strip()
+    if not normalized:
+        raise RuntimeError(f"Environment variable is empty: {name}")
+    return normalized
+
+
+def _resolve_api_token() -> str:
+    # Some evaluators inject API_KEY while others inject HF_TOKEN.
+    api_key = os.getenv("API_KEY")
+    if api_key is not None and api_key.strip():
+        return api_key.strip()
+
+    hf_token = os.getenv("HF_TOKEN")
+    if hf_token is not None and hf_token.strip():
+        return hf_token.strip()
+
+    raise RuntimeError("Missing required environment variable: API_KEY or HF_TOKEN")
+
+
+def _normalize_openai_base_url(raw_url: str) -> str:
+    parsed = urlparse(raw_url)
+    if not parsed.scheme or not parsed.netloc:
+        raise RuntimeError("API_BASE_URL must be a fully qualified URL, for example https://proxy.example.com/v1")
+
+    # OpenAI-compatible endpoints are rooted at /v1. If the evaluator injects only a host,
+    # normalize it here so requests still route through the proxy.
+    path = parsed.path.rstrip("/")
+    segments = [segment for segment in path.split("/") if segment]
+    if not segments:
+        path = "/v1"
+    elif "v1" not in segments:
+        path = f"{path}/v1"
+
+    return urlunparse(
+        (parsed.scheme, parsed.netloc, path, parsed.params, parsed.query, parsed.fragment)
+    )
+
+
+load_dotenv(override=False)
+
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:7860").strip()
+API_BASE_URL = _normalize_openai_base_url(_require_env("API_BASE_URL"))
+API_KEY = _resolve_api_token()
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini").strip()
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 # OpenAI client is required by the challenge specification.
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY, timeout=20.0)
 
 
 def _bool_text(value: bool) -> str:
